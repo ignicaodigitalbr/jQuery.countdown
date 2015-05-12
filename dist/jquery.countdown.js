@@ -19,17 +19,6 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
- 
-Date.prototype.addHours= function(h){
-    this.setHours(this.getHours()+h);
-    return this;
-};
- 
-Date.prototype.subHours= function(h){
-    this.setHours(this.getHours()-h);
-    return this;
-}; 
- 
 (function(factory) {
     "use strict";
     if (typeof define === "function" && define.amd) {
@@ -71,16 +60,12 @@ Date.prototype.subHours= function(h){
         M: "minutes",
         S: "seconds"
     };
-    function escapedRegExp(str) {
-        var sanitize = str.toString().replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1");
-        return new RegExp(sanitize);
-    }
     function strftime(offsetObject) {
         return function(format) {
             var directives = format.match(/%(-|!)?[A-Z]{1}(:[^;]+;)?/gi);
             if (directives) {
                 for (var i = 0, len = directives.length; i < len; ++i) {
-                    var directive = directives[i].match(/%(-|!)?([a-zA-Z]{1})(:[^;]+;)?/), regexp = escapedRegExp(directive[0]), modifier = directive[1] || "", plural = directive[3] || "", value = null;
+                    var directive = directives[i].match(/%(-|!)?([a-zA-Z]{1})(:[^;]+;)?/), regexp = new RegExp(directive[0]), modifier = directive[1] || "", plural = directive[3] || "", value = null;
                     directive = directive[2];
                     if (DIRECTIVE_KEY_MAP.hasOwnProperty(directive)) {
                         value = DIRECTIVE_KEY_MAP[directive];
@@ -121,6 +106,8 @@ Date.prototype.subHours= function(h){
         }
     }
     var Countdown = function(el, finalDate, callback) {
+        window.countDownDiscrepancyTime = 0;
+
         this.el = el;
         this.$el = $(el);
         this.interval = null;
@@ -135,6 +122,15 @@ Date.prototype.subHours= function(h){
         }
         this.setFinalDate(finalDate);
         this.start();
+        
+        this.setServerTime = function(serverTime){
+            window.countDownDiscrepancyTime = new Date().getTime() -  new Date(serverTime).getTime();
+        };
+
+        if (typeof window.serverTime != 'undefined') {
+            this.setServerTime(serverTime);
+        };
+
     };
     $.extend(Countdown.prototype, {
         start: function() {
@@ -152,21 +148,14 @@ Date.prototype.subHours= function(h){
             this.interval = null;
             this.dispatchEvent("stoped");
         },
-        toggle: function() {
-            if (this.interval) {
-                this.stop();
-            } else {
-                this.start();
-            }
-        },
         pause: function() {
-            this.stop();
+            this.stop.call(this);
         },
         resume: function() {
-            this.start();
+            this.start.call(this);
         },
         remove: function() {
-            this.stop.call(this);
+            this.stop();
             instances[this.instanceNumber] = null;
             delete this.$el.data().countdownInstance;
         },
@@ -178,7 +167,7 @@ Date.prototype.subHours= function(h){
                 this.remove();
                 return;
             }
-            this.totalSecsLeft = this.finalDate.getTime() - new Date().getTime();
+            this.totalSecsLeft = this.finalDate.getTime() - (new Date().getTime() - countDownDiscrepancyTime);
             this.totalSecsLeft = Math.ceil(this.totalSecsLeft / 1e3);
             this.totalSecsLeft = this.totalSecsLeft < 0 ? 0 : this.totalSecsLeft;
             this.offset = {
@@ -206,6 +195,11 @@ Date.prototype.subHours= function(h){
             this.$el.trigger(event);
         }
     });
+    
+    $.countdown = function(){
+
+    };
+
     $.fn.countdown = function() {
         var argumentsArray = Array.prototype.slice.call(arguments, 0);
         return this.each(function() {
