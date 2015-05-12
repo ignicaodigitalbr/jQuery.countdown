@@ -19,6 +19,17 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+ 
+Date.prototype.addHours= function(h){
+    this.setHours(this.getHours()+h);
+    return this;
+};
+ 
+Date.prototype.subHours= function(h){
+    this.setHours(this.getHours()-h);
+    return this;
+}; 
+ 
 (function(factory) {
     "use strict";
     if (typeof define === "function" && define.amd) {
